@@ -17,6 +17,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Upgraded Jest from v29 to v30.
 - Added `"overrides": { "minimatch": "^10.2.1" }` in `package.json` to force the patched minimatch version across the entire dependency tree, resolving all 29 high-severity ReDoS audit findings (CVE: GHSA-3ppc-4f35-3m26) in devDependencies.
 - Added `globals ^16.0.0` as a direct devDependency for ESLint v9 environment configuration.
+- Raised minimum Node.js engine requirement from `>=16.0.0` to `>=18.0.0` (ESLint v9 and Jest v30 both require Node.js 18+).
+- Updated CI matrix to drop Node.js 16 and add Node.js 24.
 
 ## [1.0.5] - 2026-02-22
 
