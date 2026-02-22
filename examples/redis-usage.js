@@ -50,8 +50,8 @@ async function run () {
     const deferredAfter = await tracker.getDeferredEvents()
     console.log(`\nFound ${deferredAfter.length} deferred event(s) after processing window.`)
 
-    await redisClient.quit()
     tracker.destroy()
+    await redisClient.quit()
 }
 
 run().catch(console.error)
