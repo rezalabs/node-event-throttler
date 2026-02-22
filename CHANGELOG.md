@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.6] - 2026-02-22
+
+### Fixed
+- Fixed `examples/redis-usage.js` shutdown order: `tracker.destroy()` now runs before `redisClient.quit()`, preventing the background processing loop from firing against a closed Redis connection.
+- Fixed `__tests__/setup/globalSetup.js` crashing under Jest v30 when Redis is unavailable. The Redis client now has an `'error'` listener attached before `connect()` is called, suppressing the unhandled event that previously caused a fatal process exit.
+- Fixed flaky assertion in `TokenBucketStrategy` test that used `toBe(3)` for a floating-point token count subject to sub-millisecond time-based refill. Changed to `toBeCloseTo(3)`.
+- Fixed two 4-space indentation violations in `RedisAdapter.js` (lines 488–489, nested ternary branches) now surfaced by ESLint v9's stricter rule evaluation.
+
+### Changed
+- Upgraded ESLint from v8 to v9 with flat config (`eslint.config.mjs`). Replaced `eslint-config-standard`, `eslint-plugin-import`, `eslint-plugin-n`, and `eslint-plugin-promise` with `neostandard ^0.12.0`. Deleted legacy `.eslintrc.json`.
+- Upgraded Jest from v29 to v30.
+- Added `"overrides": { "minimatch": "^10.2.1" }` in `package.json` to force the patched minimatch version across the entire dependency tree, resolving all 29 high-severity ReDoS audit findings (CVE: GHSA-3ppc-4f35-3m26) in devDependencies.
+- Added `globals ^16.0.0` as a direct devDependency for ESLint v9 environment configuration.
+
 ## [1.0.5] - 2026-02-22
 
 ### Changed
