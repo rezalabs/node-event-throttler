@@ -485,8 +485,8 @@ class RedisAdapter extends BaseAdapter {
         const initialConfig = strategyType === 'simple'
             ? { limit: trackerConfig.limit, deferInterval: trackerConfig.deferInterval }
             : (strategyType === 'token-bucket'
-                ? { bucketSize: strategy.bucketSize, refillRate: strategy.refillRate, deferInterval: trackerConfig.deferInterval }
-                : { limit: strategy.limit, windowSize: strategy.windowSize, deferInterval: trackerConfig.deferInterval })
+                    ? { bucketSize: strategy.bucketSize, refillRate: strategy.refillRate, deferInterval: trackerConfig.deferInterval }
+                    : { limit: strategy.limit, windowSize: strategy.windowSize, deferInterval: trackerConfig.deferInterval })
 
         try {
             const result = await this.redis.track(
