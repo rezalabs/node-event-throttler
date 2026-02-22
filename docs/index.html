@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Node Event Throttler | Scalable Event Aggregation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Manrope:wght@400;500;600;700&family=IBM+Plex+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header class="header">
+        <nav class="container nav">
+            <div class="logo">NODE_EVENT_THROTTLER</div>
+            <div class="nav-links">
+                <a href="#features">Architecture</a>
+                <a href="#integration">Implementation</a>
+                <a href="https://github.com/rezalabs/node-event-throttler" target="_blank">Repository</a>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <section class="container hero">
+            <div class="hero-content">
+                <h1>High-Velocity <br><span style="color: var(--accent)">Event Tracking.</span></h1>
+                <p>An aggregation engine for Node.js designed to handle high-velocity event streams through atomic deferral and batching logic.</p>
+                <div style="display: flex; gap: 16px; align-items: center; margin-bottom: 32px;">
+                    <a href="#integration" class="btn-primary">View Implementation</a>
+                </div>
+                <div style="font-family: var(--font-mono); font-size: 0.9rem; color: var(--text-muted); background: rgba(255,255,255,0.03); padding: 12px 20px; border: 1px solid var(--border-dim); border-radius: 6px; display: inline-block;">
+                    $ npm install node-event-throttler
+                </div>
+            </div>
+            <div class="hero-visual">
+                <div class="code-window">
+                    <div class="code-header">
+                        <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+                    </div>
+                    <div class="code-content">
+<pre>const EventTracker = require('node-event-throttler');
+
+const tracker = new EventTracker({
+  limit: 50,
+  deferInterval: 30000,
+  processor: async (batch) => {
+    // Atomic batch processing
+    await db.save(batch);
+  }
+});</pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="features">
+            <div class="container">
+                <div class="showcase-row">
+                    <div class="showcase-text">
+                        <span class="feature-tag">CORE ARCHITECTURE</span>
+                        <h2>Atomic Event Deferral</h2>
+                        <p>Protect downstream services by enforcing precise rate limits. When thresholds are exceeded, events are automatically aggregated for scheduled batch processing.</p>
+                    </div>
+                    <div class="code-window">
+                        <div class="code-content" style="color: #e2e8f0;">
+<pre>// Seamless event ingestion
+const result = await tracker.trackEvent('auth', 'uid_01', {
+  ip: '127.0.0.1',
+  action: 'login'
+});
+// result.type: 'immediate' | 'deferred'</pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="showcase-row">
+                    <div class="showcase-text">
+                        <span class="feature-tag">PERSISTENCE STRATEGY</span>
+                        <h2>Distributed Redis State</h2>
+                        <p>Maintain consistent event tracking across multiple Node.js instances. The Redis adapter ensures atomic operations and data integrity in distributed environments.</p>
+                    </div>
+                    <div class="code-window">
+                        <div class="code-content" style="color: #e2e8f0;">
+<pre>const { createClient } = require('redis');
+const EventTracker = require('node-event-throttler');
+const { RedisAdapter } = EventTracker;
+const { scripts } = RedisAdapter;
+
+const redisClient = createClient({ 
+  url: 'redis://localhost:6379',
+  scripts 
+});
+
+await redisClient.connect();
+
+const tracker = new EventTracker({
+  storage: new RedisAdapter({ redisClient }),
+  limit: 100,
+  deferInterval: 60000
+});</pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="showcase-row">
+                    <div class="showcase-text">
+                        <span class="feature-tag">ALGORITHMIC FLEXIBILITY</span>
+                        <h2>Token Bucket Bursts</h2>
+                        <p>Allow short bursts of traffic while enforcing a strict long-term average rate. Use the Token Bucket strategy to handle variable load without compromising stability.</p>
+                    </div>
+                    <div class="code-window">
+                        <div class="code-content" style="color: #e2e8f0;">
+<pre>const EventTracker = require('node-event-throttler');
+const { TokenBucketStrategy } = EventTracker;
+
+const tracker = new EventTracker({
+  strategy: new TokenBucketStrategy({
+    bucketSize: 20,
+    refillRate: 1 // tokens per second
+  })
+});</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="integration" class="implementation container">
+            <h2 class="section-title">Robust Error Handling</h2>
+            <div style="max-width: 800px; margin: 0 auto;">
+                <p style="text-align: center; color: var(--text-muted); margin-bottom: 40px;">Integrate with Dead Letter Queues or retry mechanisms through a reliable event-driven lifecycle.</p>
+                <div class="code-window">
+                    <div class="code-header" style="justify-content: flex-start;">
+                        <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+                    </div>
+                    <div class="code-content">
+<pre>tracker.on('process_failed', ({ error, events }) => {
+  // Access failed batch for recovery
+  console.error(error.message);
+  await dlq.push(events);
+});</pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer container">
+        <p>&copy; 2026 REZALABS. RELEASED UNDER ISC LICENSE.</p>
+    </footer>
+</body>
+</html>

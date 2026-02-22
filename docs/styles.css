@@ -1,0 +1,210 @@
+:root {
+  --bg-base: #020617;
+  --bg-surface: #0f172a;
+  --accent: #22d3ee;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --border-dim: rgba(255, 255, 255, 0.05);
+  --border-ui: rgba(255, 255, 255, 0.15);
+  --font-heading: 'Space Grotesk', sans-serif;
+  --font-body: 'Manrope', sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+  --transition-smooth: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: var(--bg-base);
+  color: var(--text-main);
+  font-family: var(--font-body);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 40px;
+}
+
+/* Header - Solid Background, No Blur */
+.header {
+  height: 80px;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--border-dim);
+  background-color: var(--bg-base);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.nav {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: -0.02em;
+}
+
+.nav-links {
+  display: flex;
+  gap: 32px;
+}
+
+.nav-links a {
+  text-decoration: none;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: var(--transition-smooth);
+}
+
+.nav-links a:hover {
+  color: var(--accent);
+}
+
+/* Hero Section */
+.hero {
+  padding: 100px 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 80px;
+  align-items: center;
+}
+
+.hero-content h1 {
+  font-family: var(--font-heading);
+  font-size: 4rem;
+  line-height: 1.05;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  margin-bottom: 24px;
+}
+
+.hero-content p {
+  font-size: 1.15rem;
+  color: var(--text-muted);
+  margin-bottom: 40px;
+  max-width: 480px;
+}
+
+/* Code Window - Solid, Deep Black */
+.code-window {
+  background: #000000;
+  border: 1px solid var(--border-ui);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 30px 60px -12px rgba(0,0,0,0.4);
+}
+
+.code-header {
+  height: 36px;
+  background: #111111;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 8px;
+  border-bottom: 1px solid var(--border-dim);
+}
+
+.dot { width: 10px; height: 10px; border-radius: 50%; background: #333333; }
+
+.code-content {
+  padding: 24px;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--accent);
+  overflow-x: auto;
+}
+
+/* Staggered Showcase (Replacing Generic 3-Grid) */
+.showcase-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 100px;
+  padding: 100px 0;
+  border-bottom: 1px solid var(--border-dim);
+  align-items: center;
+}
+
+.showcase-row:nth-child(even) {
+  direction: rtl;
+}
+
+.showcase-row:nth-child(even) .showcase-text,
+.showcase-row:nth-child(even) .code-window {
+  direction: ltr;
+}
+
+.showcase-text h2 {
+  font-family: var(--font-heading);
+  font-size: 2.5rem;
+  margin-bottom: 20px;
+  letter-spacing: -0.03em;
+}
+
+.showcase-text p {
+  color: var(--text-muted);
+  margin-bottom: 30px;
+}
+
+.feature-tag {
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  margin-bottom: 12px;
+  display: block;
+}
+
+/* Implementation Section */
+.implementation {
+  padding: 120px 0;
+}
+
+.section-title {
+  font-family: var(--font-heading);
+  font-size: 3rem;
+  text-align: center;
+  margin-bottom: 60px;
+}
+
+.btn-primary {
+  background: var(--text-main);
+  color: var(--bg-base);
+  padding: 14px 28px;
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 0.95rem;
+  display: inline-block;
+}
+
+.footer {
+  padding: 60px 0;
+  border-top: 1px solid var(--border-dim);
+  text-align: center;
+}
+
+@media (max-width: 900px) {
+  .hero, .showcase-row {
+    grid-template-columns: 1fr;
+    gap: 40px;
+    padding: 60px 0;
+    text-align: center;
+  }
+  .hero-content h1 { font-size: 3rem; }
+  .showcase-row:nth-child(even) { direction: ltr; }
+}

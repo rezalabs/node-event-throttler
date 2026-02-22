@@ -1,0 +1,49 @@
+{
+  "name": "node-event-throttler",
+  "version": "1.0.5",
+  "description": "A high-performance event aggregation and rate-limiting engine for Node.js.",
+  "main": "index.js",
+  "scripts": {
+    "lint": "eslint .",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "start:example": "node examples/basic-usage.js",
+    "start:redis-example": "node examples/redis-usage.js",
+    "start:advanced-example": "node examples/advanced-usage.js"
+  },
+  "keywords": [
+    "rate-limit",
+    "throttle",
+    "debounce",
+    "token-bucket",
+    "events",
+    "aggregate",
+    "redis",
+    "alerts",
+    "logs"
+  ],
+  "author": "RezaLabs <rezalabs@yahoo.com>",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rezalabs/node-event-throttler.git"
+  },
+  "bugs": {
+    "url": "https://github.com/rezalabs/node-event-throttler/issues"
+  },
+  "homepage": "https://github.com/rezalabs/node-event-throttler#readme",
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "dependencies": {
+    "redis": "^4.7.1"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.1",
+    "eslint-config-standard": "^17.1.0",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-n": "^16.6.2",
+    "eslint-plugin-promise": "^6.6.0",
+    "jest": "^29.7.0"
+  }
+}
