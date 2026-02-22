@@ -16,6 +16,10 @@ module.exports = async () => {
         }
     })
 
+    // Suppress unhandled 'error' events emitted by the redis Commander before the
+    // connect() promise rejects. Without this listener Node.js throws a fatal error.
+    client.on('error', () => {})
+
     try {
         await client.connect()
         await client.flushDb()

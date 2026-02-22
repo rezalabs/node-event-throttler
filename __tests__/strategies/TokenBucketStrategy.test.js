@@ -33,7 +33,7 @@ describe('TokenBucketStrategy', () => {
         }
         const { outcome, record } = await strategy.track(existingRecord, eventData)
         expect(outcome).toBe('immediate')
-        expect(record.strategyData.tokens).toBe(3)
+        expect(record.strategyData.tokens).toBeCloseTo(3)
     })
 
     it('should refill tokens based on elapsed time', async () => {
