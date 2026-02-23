@@ -21,7 +21,14 @@ module.exports = async () => {
     client.on('error', () => {})
 
     try {
-        await client.connect()
+        // Wrap connect() with an explicit timeout to prevent the test suite from
+        // hanging indefinitely when no Redis server is reachable.
+        await Promise.race([
+            client.connect(),
+            new Promise((resolve, reject) =>
+                setTimeout(() => reject(new Error('Connection timed out after 3 seconds')), 3000)
+            )
+        ])
         await client.flushDb()
         console.log('[Jest Global Setup] Test Redis DB (15) flushed successfully.')
         process.env.REDIS_AVAILABLE = 'true'
