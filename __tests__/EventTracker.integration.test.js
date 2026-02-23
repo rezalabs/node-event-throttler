@@ -140,4 +140,68 @@ describe('EventTracker Integration', () => {
         record = await tracker.storage.get(EventTracker.generateCompositeKey('dynamic', 'config-test'))
         expect(record.config.limit).toBe(5)
     })
+
+    it('should retrieve a specific event via getEvent()', async () => {
+        await tracker.trackEvent('auth', 'user-42')
+        const record = await tracker.getEvent('auth', 'user-42')
+        expect(record).toBeDefined()
+        expect(record.category).toBe('auth')
+        expect(record.id).toBe('user-42')
+        expect(record.count).toBe(1)
+    })
+
+    it('should return undefined from getEvent() for unknown events', async () => {
+        const record = await tracker.getEvent('auth', 'nonexistent')
+        expect(record).toBeUndefined()
+    })
+
+    it('should remove a specific event via resetEvent()', async () => {
+        await tracker.trackEvent('auth', 'user-reset')
+        await tracker.trackEvent('auth', 'user-reset')
+        let record = await tracker.getEvent('auth', 'user-reset')
+        expect(record.count).toBe(2)
+
+        await tracker.resetEvent('auth', 'user-reset')
+        record = await tracker.getEvent('auth', 'user-reset')
+        expect(record).toBeUndefined()
+
+        // After reset, the next trackEvent should start fresh
+        const res = await tracker.trackEvent('auth', 'user-reset')
+        expect(res.type).toBe('immediate')
+        expect(res.data.count).toBe(1)
+    })
+
+    it('should return due events non-destructively via peekDueEvents()', async () => {
+        jest.useFakeTimers()
+        const processor = jest.fn().mockResolvedValue()
+        tracker.setProcessor(processor)
+
+        await tracker.trackEvent('api', 'peek-1')
+        await tracker.trackEvent('api', 'peek-1')
+        await tracker.trackEvent('api', 'peek-1') // deferred
+
+        jest.advanceTimersByTime(150)
+
+        // peekDueEvents should see the due event without deleting it
+        const peeked = await tracker.peekDueEvents()
+        expect(peeked).toHaveLength(1)
+        expect(peeked[0].id).toBe('peek-1')
+
+        // Event should still be in storage after peek
+        const stillDeferred = await tracker.getDeferredEvents()
+        expect(stillDeferred).toHaveLength(1)
+
+        jest.useRealTimers()
+    })
+
+    it('should emit config_updated event with the updated record', async () => {
+        await tracker.trackEvent('dynamic', 'emit-test')
+        const updatedRecords = []
+        tracker.on('config_updated', (rec) => updatedRecords.push(rec))
+
+        await tracker.updateConfig('dynamic', 'emit-test', { limit: 10 })
+
+        expect(updatedRecords).toHaveLength(1)
+        expect(updatedRecords[0].config.limit).toBe(10)
+    })
 })
