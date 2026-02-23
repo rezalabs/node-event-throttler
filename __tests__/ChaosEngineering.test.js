@@ -14,13 +14,15 @@ describe('Chaos Engineering - Robustness & Edge Cases', () => {
         })
     })
 
-    describe('EventTracker - Processor Failures & Data Loss', () => {
-        test('events should be lost if processor fails and no DLQ is implemented', async () => {
+    describe('EventTracker - Processor Failures & Re-queue on Exhaustion', () => {
+        test('events should be re-queued in storage when processor exhausts all retries', async () => {
             const tracker = new EventTracker({
                 storage: new InMemoryAdapter(),
                 limit: 1,
                 deferInterval: 0, // Immediate deferral for second event
-                maxRetries: 0 // Disable retries for this test
+                maxRetries: 0, // Disable retries for this test
+                retryDelay: 100,
+                processingInterval: 60000 // Prevent background loop from interfering
             })
 
             // Suppress unhandled error log during this test
@@ -35,24 +37,22 @@ describe('Chaos Engineering - Robustness & Edge Cases', () => {
             // Track second event (deferred because limit is 1)
             await tracker.trackEvent('test', '1')
 
-            const deferred = await tracker.getDeferredEvents()
-            expect(deferred.length).toBe(1)
+            const deferredBefore = await tracker.getDeferredEvents()
+            expect(deferredBefore.length).toBe(1)
 
             // Attempt to process
-            const failedPromise = new Promise((resolve) => {
-                tracker.on('process_failed', ({ events }) => {
-                    resolve(events)
-                })
-            })
+            const failureHandler = jest.fn()
+            tracker.on('process_failed', failureHandler)
 
             await tracker.processDeferredEvents()
-            const failedEvents = await failedPromise
 
-            expect(failedEvents.length).toBe(1)
+            expect(failureHandler).toHaveBeenCalledTimes(1)
 
-            // Critical check: are they gone from storage?
+            // Critical check: events must be re-queued, not lost
             const deferredAfter = await tracker.getDeferredEvents()
-            expect(deferredAfter.length).toBe(0) // They are lost from storage!
+            expect(deferredAfter.length).toBe(1)
+            expect(deferredAfter[0].deferred).toBe(true)
+            expect(deferredAfter[0].scheduledSendAt).toBeGreaterThan(Date.now())
 
             tracker.destroy()
         })
@@ -87,6 +87,12 @@ describe('Chaos Engineering - Robustness & Edge Cases', () => {
         test('should throw on invalid configuration types', () => {
             expect(() => new EventTracker({ limit: -1 })).toThrow('limit must be non-negative.')
             expect(() => new EventTracker({ limit: '5' })).toThrow('limit must be a number.')
+        })
+
+        test('should throw RangeError when Infinity is passed for numeric fields', () => {
+            expect(() => new EventTracker({ limit: Infinity })).toThrow('limit must be a finite number.')
+            expect(() => new EventTracker({ processingInterval: Infinity })).toThrow('processingInterval must be a finite number.')
+            expect(() => new EventTracker({ deferInterval: Infinity })).toThrow('deferInterval must be a finite number.')
         })
     })
 
