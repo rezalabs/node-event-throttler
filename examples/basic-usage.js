@@ -41,11 +41,11 @@ async function run () {
     if (dueEvents.length > 0) {
         console.log(`Found ${dueEvents.length} due event(s).`)
         console.log('Example due event:', dueEvents[0])
-        // Manually delete after processing
+        // Use resetEvent() to remove each processed event by category + id.
         for (const event of dueEvents) {
-            await tracker.storage.delete(event.key)
+            await tracker.resetEvent(event.category, event.id)
         }
-        console.log('Manually deleted processed events.')
+        console.log('Manually reset processed events.')
     } else {
         console.log('No events were due for processing.')
     }

@@ -94,6 +94,9 @@ class EventTracker extends EventEmitter {
                 if (typeof options[field] !== 'number' || Number.isNaN(options[field])) {
                     throw new TypeError(`${field} must be a number.`)
                 }
+                if (!Number.isFinite(options[field])) {
+                    throw new RangeError(`${field} must be a finite number.`)
+                }
                 if (options[field] < 0) {
                     throw new RangeError(`${field} must be non-negative.`)
                 }
@@ -210,7 +213,12 @@ class EventTracker extends EventEmitter {
     /**
      * Finds due deferred events, processes them with the callback, and atomically removes them.
      * Includes retry logic with exponential backoff for failed processor calls.
-     * @returns {Promise<EventRecord[]>} The list of events that were processed.
+     *
+     * Behavior depends on whether a processor is set:
+     *  - With processor: atomically pops (removes) due events, calls processor, re-queues on failure.
+     *  - Without processor: non-destructive read only. Use resetEvent() to remove after manual processing.
+     *
+     * @returns {Promise<EventRecord[]>} The list of events that were due.
      */
     async processDeferredEvents () {
         if (!this.processor) {
@@ -244,7 +252,29 @@ class EventTracker extends EventEmitter {
             }
         }
 
-        // All retries exhausted - emit failure with context for DLQ handling
+        // All retries exhausted — re-queue events back into storage to prevent data loss.
+        // Schedule the next attempt with continued exponential backoff.
+        const requeueDelay = Math.max(
+            this.retryDelay * Math.pow(2, this.maxRetries),
+            this.processingIntervalMs
+        )
+        const requeueAt = Date.now() + requeueDelay
+        for (const event of dueEvents) {
+            try {
+                await this.storage.set(event.key, {
+                    ...event,
+                    deferred: true,
+                    scheduledSendAt: requeueAt,
+                    // Ensure the record doesn't expire before the next processing attempt.
+                    expiresAt: Math.max(event.expiresAt, requeueAt + this.config.expireTime)
+                })
+            } catch (requeueError) {
+                this.emit('error', new Error(
+                    `Failed to requeue event ${event.key} after processor exhaustion: ${requeueError.message}`
+                ))
+            }
+        }
+
         this.emit('process_failed', {
             error: lastError,
             events: dueEvents,
@@ -252,6 +282,15 @@ class EventTracker extends EventEmitter {
         })
         this.emit('error', new Error(`Processor callback failed after ${this.maxRetries + 1} attempts: ${lastError.message}`))
         return dueEvents
+    }
+
+    /**
+     * Returns due deferred events without removing them from storage.
+     * Always non-destructive, regardless of whether a processor is configured.
+     * @returns {Promise<EventRecord[]>}
+     */
+    async peekDueEvents () {
+        return this.storage.findDueDeferred(Date.now())
     }
 
     /**
@@ -275,14 +314,17 @@ class EventTracker extends EventEmitter {
         }
 
         const compositeKey = EventTracker.generateCompositeKey(category, id)
+        let updatedRecord = null
         const updated = await this.storage.update(compositeKey, (record) => {
             record.config = { ...record.config, ...newConfig }
+            // Capture the updated record from within the closure to avoid a
+            // separate storage.get() call, which would introduce a race window.
+            updatedRecord = record
             return record
         })
 
         if (updated) {
-            const record = await this.storage.get(compositeKey)
-            this.emit('config_updated', record)
+            this.emit('config_updated', updatedRecord)
         }
         return updated
     }
@@ -293,6 +335,29 @@ class EventTracker extends EventEmitter {
      */
     async getDeferredEvents () {
         return this.storage.findAllDeferred()
+    }
+
+    /**
+     * Retrieves the current state of a specific event by category and id.
+     * @param {string} category - High-level grouping of the event.
+     * @param {string} id - Specific identifier within the category.
+     * @returns {Promise<EventRecord|undefined>} The event record, or undefined if not found.
+     */
+    async getEvent (category, id) {
+        const compositeKey = EventTracker.generateCompositeKey(category, id)
+        return this.storage.get(compositeKey)
+    }
+
+    /**
+     * Removes the record for a specific event, resetting all tracked state for it.
+     * Useful for manual recovery after processor failures or for testing.
+     * @param {string} category - High-level grouping of the event.
+     * @param {string} id - Specific identifier within the category.
+     * @returns {Promise<void>}
+     */
+    async resetEvent (category, id) {
+        const compositeKey = EventTracker.generateCompositeKey(category, id)
+        await this.storage.delete(compositeKey)
     }
 
     /**
