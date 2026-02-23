@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.7] - 2026-02-23
+
+### Fixed
+- **CRITICAL**: Fixed data loss when a processor exhausts all retries. Previously, `processDeferredEvents()` atomically popped events then discarded them on failure. Events are now re-queued back into storage with continued exponential backoff (`scheduledSendAt = now + retryDelay * 2^maxRetries`) and an extended `expiresAt`, so no events are silently dropped.
+- Fixed `_validateConfig` accepting `Infinity` for numeric fields. `typeof Infinity === 'number'` passed the existing check, allowing `processingInterval: Infinity` to silently break the background processing loop. A `Number.isFinite()` guard now throws `RangeError: <field> must be a finite number.`
+- Fixed race condition in `updateConfig()`: a second `storage.get()` call was made after `storage.update()` to obtain the updated record for the `config_updated` event — a window where a concurrent operation could modify or delete the record between the two calls. The updated record is now captured inside the `update` closure, eliminating the second fetch.
+- Fixed test suite hanging indefinitely when no Redis server is reachable. `socket.connectTimeout: 2000` did not reliably abort on all platforms; the global setup now wraps `client.connect()` in `Promise.race()` with an explicit 3-second timeout.
+
+### Added
+- Added `getEvent(category, id)` public method to retrieve the current state of a specific tracked event without exposing internal storage or key-hashing details.
+- Added `resetEvent(category, id)` public method to remove a specific event record, resetting all tracked state. Replaces the previous pattern of calling `tracker.storage.delete(event.key)` directly.
+- Added `peekDueEvents()` public method as an always-non-destructive alternative to `processDeferredEvents()`. Returns due deferred events without removing them from storage, regardless of whether a processor is configured.
+
+### Changed
+- Clarified `processDeferredEvents()` JSDoc to document both operating modes explicitly: with a processor it atomically pops and re-queues on failure; without a processor it is a non-destructive read. Use `peekDueEvents()` for an always-safe non-destructive read.
+- Updated `examples/basic-usage.js` to use the new `resetEvent()` method instead of calling `tracker.storage.delete()` directly.
+
 ## [1.0.6] - 2026-02-22
 
 ### Fixed

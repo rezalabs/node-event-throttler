@@ -1,6 +1,6 @@
 {
   "name": "node-event-throttler",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "A high-performance event aggregation and rate-limiting engine for Node.js.",
   "main": "index.js",
   "scripts": {
